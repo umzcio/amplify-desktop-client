@@ -362,9 +362,8 @@ function showUpdateDialog(type, version = null) {
       title: 'Update',
       parent: mainWindow,
       modal: true,
-      frame: false,
-      transparent: true,
-      backgroundColor: '#00000000',
+      titleBarStyle: 'hidden',
+      backgroundColor: '#3d3d3d',
       webPreferences: {
         nodeIntegration: true,
         contextIsolation: false
@@ -447,8 +446,8 @@ autoUpdater.on('update-available', async (info) => {
   const response = await showUpdateDialog('available', info.version);
 
   if (response === 'primary') {
+    // Start download silently - will show "ready" dialog when complete
     autoUpdater.downloadUpdate();
-    await showUpdateDialog('downloading');
   }
 });
 
