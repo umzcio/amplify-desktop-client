@@ -11,7 +11,9 @@ app.setName('Amplify');
 
 // Configure auto-updater
 autoUpdater.autoDownload = false; // Always ask user before downloading
-autoUpdater.autoInstallOnAppQuit = true; // Install when app quits
+
+// Flag to track if we're installing an update
+let isInstallingUpdate = false;
 
 // Environment URLs - load from store with defaults
 function getEnvironments() {
@@ -599,11 +601,13 @@ autoUpdater.on('update-downloaded', async () => {
   const response = await showUpdateDialog('ready');
 
   if (response === 'primary') {
-    // quitAndInstall parameters:
-    // - isSilent: false = show "app will restart" dialog
-    // - isForceRunAfter: true = launch new version after installation
+    // Set flag so app will quit when windows close
+    isInstallingUpdate = true;
+
+    // On macOS, quitAndInstall() is REQUIRED to actually install the update
+    // It will close the app, replace it with the new version, and relaunch
     setImmediate(() => {
-      autoUpdater.quitAndInstall(false, true);
+      autoUpdater.quitAndInstall(true, true);
     });
   }
 });
@@ -641,9 +645,9 @@ app.whenReady().then(() => {
   });
 });
 
-// Quit when all windows are closed (except on macOS)
+// Quit when all windows are closed (except on macOS, unless installing update)
 app.on('window-all-closed', () => {
-  if (process.platform !== 'darwin') {
+  if (process.platform !== 'darwin' || isInstallingUpdate) {
     app.quit();
   }
 });
