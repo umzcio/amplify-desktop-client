@@ -21,6 +21,11 @@
       align-items: center;
       justify-content: center;
       min-height: 100vh;
+      -webkit-user-select: none;
+      -moz-user-select: none;
+      -ms-user-select: none;
+      user-select: none;
+      cursor: default;
     }
 
     .preferences-container {
@@ -63,6 +68,11 @@
       font-size: 13px;
       font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif;
       margin-bottom: 6px;
+      -webkit-user-select: text;
+      -moz-user-select: text;
+      -ms-user-select: text;
+      user-select: text;
+      cursor: text;
     }
 
     input[type="text"]:focus,

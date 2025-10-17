@@ -97,6 +97,118 @@ function createWindow() {
   // Authentication often redirects through multiple domains (Google, Microsoft, etc.)
   // and needs to navigate freely to complete the login process
 
+  // Track error state to prevent showing error page during auth redirects
+  let consecutiveErrors = 0;
+  let lastErrorTime = 0;
+  let isShowingErrorPage = false;
+
+  // Handle page load failures
+  mainWindow.webContents.on('did-fail-load', (event, errorCode, errorDescription, validatedURL, isMainFrame) => {
+    // Ignore sub-frame loads, only care about main frame
+    if (!isMainFrame) {
+      return;
+    }
+
+    // Ignore if already showing error page
+    if (isShowingErrorPage) {
+      return;
+    }
+
+    // Ignore cancellations (user-initiated or during redirects)
+    // Error codes: -3 is ERR_ABORTED (normal during redirects), -10 is ERR_TIMED_OUT
+    if (errorCode === -3) {
+      return;
+    }
+
+    // Ignore certain error codes that are common during SAML flows
+    const ignoredErrors = [
+      -300, // ERR_INVALID_URL - can happen during redirects
+    ];
+
+    if (ignoredErrors.includes(errorCode)) {
+      return;
+    }
+
+    // Track consecutive errors to avoid false positives during auth
+    const now = Date.now();
+    if (now - lastErrorTime > 5000) {
+      // Reset counter if more than 5 seconds since last error
+      consecutiveErrors = 0;
+    }
+
+    consecutiveErrors++;
+    lastErrorTime = now;
+
+    // Only show error page if we have multiple consecutive errors
+    // or if it's a clear network failure
+    const networkErrors = [-2, -7, -21, -100, -101, -102, -105, -106, -109];
+    const isNetworkError = networkErrors.includes(errorCode);
+
+    if (consecutiveErrors >= 2 || isNetworkError) {
+      isShowingErrorPage = true;
+
+      // Map common error descriptions to user-friendly messages
+      let errorDesc = errorDescription;
+
+      // Load the error page
+      mainWindow.loadFile('renderer/error.html', {
+        query: {
+          errorCode: errorCode,
+          errorDesc: errorDesc
+        }
+      });
+    }
+  });
+
+  // Reset error state on successful navigation and check for HTTP error pages
+  mainWindow.webContents.on('did-finish-load', async () => {
+    // Skip check if we're already showing our custom error page
+    const currentURL = mainWindow.webContents.getURL();
+    if (currentURL.includes('error.html')) {
+      return;
+    }
+
+    // Check if page is a 404 or other error page
+    try {
+      const isErrorPage = await mainWindow.webContents.executeJavaScript(`
+        (function() {
+          const title = document.title.toLowerCase();
+          const body = document.body ? document.body.innerText.toLowerCase() : '';
+
+          // Check for common error indicators
+          const has404 = title.includes('404') || body.includes('404');
+          const hasErrorTitle = title.includes('error') || title.includes('not found');
+          const hasErrorContent = body.includes('page could not be found') ||
+                                  body.includes('page not found') ||
+                                  body.includes('404 not found');
+
+          // Check if it's a minimal error page (very little content)
+          const isMinimal = document.body && document.body.innerText.length < 200;
+
+          return (has404 || (hasErrorTitle && hasErrorContent) || (has404 && isMinimal));
+        })();
+      `);
+
+      if (isErrorPage) {
+        isShowingErrorPage = true;
+        mainWindow.loadFile('renderer/error.html', {
+          query: {
+            errorCode: '404',
+            errorDesc: 'Page not found - please check your internet connection or verify the server is accessible'
+          }
+        });
+        return;
+      }
+    } catch (err) {
+      // Ignore JavaScript execution errors
+      console.log('Error checking page content:', err);
+    }
+
+    // Reset error counters on successful load
+    consecutiveErrors = 0;
+    isShowingErrorPage = false;
+  });
+
   // Set up application menu
   createMenu();
 }
@@ -423,6 +535,20 @@ ipcMain.on('preferences-save', (event, settings) => {
     mainWindow.close();
   }
   createWindow();
+});
+
+// Handle error page retry
+ipcMain.on('error-page-retry', () => {
+  if (mainWindow && !mainWindow.isDestroyed()) {
+    const environment = store.get('environment', 'production');
+    const environments = getEnvironments();
+    mainWindow.loadURL(environments[environment]);
+  }
+});
+
+// Handle error page quit
+ipcMain.on('error-page-quit', () => {
+  app.quit();
 });
 
 // Function to manually check for updates

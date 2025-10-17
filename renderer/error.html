@@ -1,0 +1,321 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Connection Error - Amplify</title>
+  <style>
+    * {
+      margin: 0;
+      padding: 0;
+      box-sizing: border-box;
+    }
+
+    body {
+      font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif;
+      background: linear-gradient(135deg, #333333 0%, #4a4a4a 100%);
+      color: #ffffff;
+      padding: 20px;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      min-height: 100vh;
+      overflow-y: auto;
+      -webkit-user-select: none;
+      -moz-user-select: none;
+      -ms-user-select: none;
+      user-select: none;
+      cursor: default;
+    }
+
+    .error-container {
+      max-width: 600px;
+      text-align: center;
+    }
+
+    .icon-container {
+      margin-bottom: 24px;
+    }
+
+    .error-icon {
+      width: 80px;
+      height: 80px;
+      margin: 0 auto;
+      background: rgba(255, 107, 107, 0.2);
+      border-radius: 50%;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      border: 2px solid rgba(255, 107, 107, 0.4);
+    }
+
+    .error-icon svg {
+      width: 40px;
+      height: 40px;
+      stroke: #ff6b6b;
+      fill: none;
+      stroke-width: 2;
+      stroke-linecap: round;
+      stroke-linejoin: round;
+    }
+
+    h1 {
+      font-size: 28px;
+      font-weight: 600;
+      margin-bottom: 8px;
+      letter-spacing: -0.5px;
+    }
+
+    .error-code {
+      font-size: 13px;
+      opacity: 0.7;
+      margin-bottom: 20px;
+      font-family: 'Courier New', Courier, monospace;
+    }
+
+    .description {
+      background: rgba(52, 53, 64, 0.3);
+      backdrop-filter: blur(10px);
+      border-radius: 12px;
+      padding: 20px;
+      margin-bottom: 16px;
+      text-align: left;
+      line-height: 1.6;
+      font-size: 14px;
+      border: 1px solid rgba(52, 53, 64, 0.5);
+    }
+
+    .description p {
+      margin-bottom: 12px;
+    }
+
+    .description p:last-child {
+      margin-bottom: 0;
+    }
+
+    .troubleshooting {
+      background: rgba(52, 53, 64, 0.2);
+      backdrop-filter: blur(10px);
+      border-radius: 12px;
+      padding: 20px;
+      margin-bottom: 24px;
+      text-align: left;
+      border: 1px solid rgba(52, 53, 64, 0.4);
+    }
+
+    .troubleshooting h2 {
+      font-size: 16px;
+      font-weight: 600;
+      margin-bottom: 12px;
+    }
+
+    .troubleshooting ul {
+      list-style: none;
+      padding: 0;
+    }
+
+    .troubleshooting li {
+      font-size: 13px;
+      line-height: 1.6;
+      margin-bottom: 8px;
+      padding-left: 20px;
+      position: relative;
+    }
+
+    .troubleshooting li:last-child {
+      margin-bottom: 0;
+    }
+
+    .troubleshooting li::before {
+      content: "•";
+      position: absolute;
+      left: 0;
+      color: #9b9cad;
+      font-weight: bold;
+    }
+
+    .button-container {
+      display: flex;
+      gap: 12px;
+      justify-content: center;
+      flex-wrap: wrap;
+    }
+
+    button {
+      background: rgba(52, 53, 64, 0.6);
+      border: 1px solid rgba(52, 53, 64, 0.8);
+      color: white;
+      padding: 12px 32px;
+      border-radius: 6px;
+      font-size: 14px;
+      font-weight: 500;
+      cursor: pointer;
+      transition: all 0.2s;
+      min-width: 120px;
+    }
+
+    button:hover {
+      background: rgba(52, 53, 64, 0.8);
+      border-color: #343540;
+    }
+
+    button:active {
+      transform: scale(0.98);
+    }
+
+    button:focus {
+      outline: 2px solid #9b9cad;
+      outline-offset: 2px;
+    }
+
+    button:focus:not(:focus-visible) {
+      outline: none;
+    }
+
+    button:focus-visible {
+      outline: 2px solid #9b9cad;
+      outline-offset: 2px;
+    }
+
+    button.primary {
+      background: rgba(52, 53, 64, 0.9);
+      border-color: #343540;
+    }
+
+    button.primary:hover {
+      background: #343540;
+    }
+
+    .sr-only {
+      position: absolute;
+      width: 1px;
+      height: 1px;
+      padding: 0;
+      margin: -1px;
+      overflow: hidden;
+      clip: rect(0, 0, 0, 0);
+      white-space: nowrap;
+      border-width: 0;
+    }
+
+    @media (prefers-reduced-motion: reduce) {
+      * {
+        animation: none !important;
+        transition: none !important;
+      }
+    }
+  </style>
+</head>
+<body>
+  <div class="error-container" role="alert" aria-live="assertive" aria-labelledby="error-title" aria-describedby="error-description">
+    <div class="icon-container">
+      <div class="error-icon" aria-hidden="true">
+        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24">
+          <circle cx="12" cy="12" r="10"></circle>
+          <line x1="12" y1="8" x2="12" y2="12"></line>
+          <line x1="12" y1="16" x2="12.01" y2="16"></line>
+        </svg>
+      </div>
+    </div>
+
+    <h1 id="error-title">Connection Error</h1>
+
+    <div class="error-code" id="error-code" aria-live="polite">
+      <!-- Error code will be inserted here -->
+    </div>
+
+    <div class="description" id="error-description">
+      <p><strong>Unable to connect to Amplify.</strong></p>
+      <p id="error-message">It looks like you need an active internet connection to use Amplify. Please check your network connection and try again.</p>
+    </div>
+
+    <div class="troubleshooting">
+      <h2>Troubleshooting Steps</h2>
+      <ul role="list">
+        <li>Check your internet connection and try again</li>
+        <li>Verify that the Amplify server is accessible</li>
+        <li>If using a VPN, ensure it's properly connected</li>
+        <li>Try switching to a different network environment</li>
+        <li>Contact your IT support if the problem persists</li>
+      </ul>
+    </div>
+
+    <div class="button-container">
+      <button id="retry-btn" type="button" class="primary" aria-label="Retry loading the page">
+        Retry
+      </button>
+      <button id="quit-btn" type="button" aria-label="Quit Amplify application">
+        Quit
+      </button>
+    </div>
+  </div>
+
+  <script>
+    // Get error details from URL parameters
+    const urlParams = new URLSearchParams(window.location.search);
+    const errorCode = urlParams.get('errorCode') || '';
+    const errorDesc = urlParams.get('errorDesc') || '';
+
+    // Display error code if provided
+    if (errorCode) {
+      const sanitizedCode = String(errorCode).replace(/[<>]/g, '');
+      document.getElementById('error-code').textContent = `Error Code: ${sanitizedCode}`;
+    }
+
+    // Display custom error message if provided
+    if (errorDesc) {
+      const sanitizedDesc = String(errorDesc).replace(/[<>]/g, '');
+      const errorMessageEl = document.getElementById('error-message');
+
+      if (sanitizedDesc.includes('Page not found') || sanitizedDesc.includes('404')) {
+        errorMessageEl.textContent = 'The server could not be reached. Please check your internet connection and verify that the Amplify server is accessible.';
+      } else if (sanitizedDesc === 'net::ERR_INTERNET_DISCONNECTED' ||
+          sanitizedDesc === 'net::ERR_NAME_NOT_RESOLVED' ||
+          sanitizedDesc === 'net::ERR_CONNECTION_REFUSED') {
+        errorMessageEl.textContent = 'No internet connection detected. Please check your network settings and try again.';
+      } else if (sanitizedDesc === 'net::ERR_CONNECTION_TIMED_OUT') {
+        errorMessageEl.textContent = 'The connection timed out. The server may be experiencing high load or your connection may be slow.';
+      } else if (sanitizedDesc) {
+        errorMessageEl.textContent = sanitizedDesc;
+      }
+    }
+
+    // Handle retry button
+    document.getElementById('retry-btn').addEventListener('click', () => {
+      if (window.electronAPI) {
+        window.electronAPI.errorPageRetry();
+      }
+    });
+
+    // Handle quit button
+    document.getElementById('quit-btn').addEventListener('click', () => {
+      if (window.electronAPI) {
+        window.electronAPI.errorPageQuit();
+      }
+    });
+
+    // Handle keyboard shortcuts
+    document.addEventListener('keydown', (e) => {
+      // Escape key to quit
+      if (e.key === 'Escape') {
+        if (window.electronAPI) {
+          window.electronAPI.errorPageQuit();
+        }
+      }
+      // Cmd/Ctrl+R to retry
+      if ((e.metaKey || e.ctrlKey) && e.key === 'r') {
+        e.preventDefault();
+        if (window.electronAPI) {
+          window.electronAPI.errorPageRetry();
+        }
+      }
+    });
+
+    // Focus the retry button on load for keyboard accessibility
+    window.addEventListener('load', () => {
+      document.getElementById('retry-btn').focus();
+    });
+  </script>
+</body>
+</html>
