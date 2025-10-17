@@ -2,6 +2,8 @@
 
 Desktop wrapper for University of Montana's implementation of Amplify, providing a native desktop experience with persistent sessions and seamless environment switching.
 
+![Amplify Desktop Client](screenshots/AmplifyClient.png)
+
 ## About Amplify
 
 **Amplify** is Vanderbilt University's open-source enterprise platform for generative AI, designed to empower organizations with the ability to innovate across disciplines. By offering a flexible and cost-efficient chat-based interface, Amplify allows users to experiment with and deploy generative AI solutions tailored to their specific needs.
@@ -73,9 +75,17 @@ Switch between Production and Development environments using:
 - Menu: **View → Environment** → Select environment
 - Keyboard: `Cmd/Ctrl+E` to open environment menu
 
+![Environment Switcher](screenshots/env-switcher.png)
+
 **Available Environments:**
 - Production: https://chat.umontana.ai
 - Development: https://dev-chat.umontana.ai
+
+### Preferences
+
+Configure custom environment URLs via **Amplify → Preferences** (or `Cmd/Ctrl+,`):
+
+![Preferences](screenshots/preferences.png)
 
 ### Keyboard Shortcuts
 
@@ -128,6 +138,9 @@ Amplify-Mac-Desktop/
 1. Download the DMG file (`Amplify-1.0.0-arm64.dmg`)
 2. Open the DMG
 3. Drag "Amplify" to Applications folder
+
+![macOS Installer](screenshots/installer.png)
+
 4. **Right-click** the app and choose "Open" the first time (to bypass Gatekeeper)
 5. Click "Open" in the security dialog
 
