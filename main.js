@@ -1,17 +1,37 @@
-const { app, BrowserWindow, Menu, shell } = require('electron');
+const { app, BrowserWindow, Menu, shell, dialog, ipcMain } = require('electron');
+const { autoUpdater } = require('electron-updater');
 const path = require('path');
 const Store = require('electron-store');
 
 // Initialize electron-store for persisting settings
 const store = new Store();
 
-// Environment URLs
-const ENVIRONMENTS = {
-  production: 'https://chat.umontana.ai',
-  development: 'https://dev-chat.umontana.ai'
-};
+// Set app name (for macOS menu and system)
+app.setName('Amplify');
+
+// Configure auto-updater
+autoUpdater.autoDownload = false; // Always ask user before downloading
+autoUpdater.autoInstallOnAppQuit = true; // Install when app quits
+
+// Environment URLs - load from store with defaults
+function getEnvironments() {
+  return {
+    production: store.get('prodUrl', 'https://chat.umontana.ai'),
+    development: store.get('devUrl', 'https://dev-chat.umontana.ai')
+  };
+}
+
+// Check if development environment is enabled
+function isDevEnabled() {
+  return store.get('devEnabled', true);
+}
 
 let mainWindow;
+let aboutWindow;
+let preferencesWindow;
+let updateDialog;
+let updateCheckInProgress = false;
+let updateDialogCallback = null;
 
 function createWindow() {
   // Get stored environment (default to production)
@@ -42,7 +62,8 @@ function createWindow() {
   });
 
   // Load the appropriate URL
-  mainWindow.loadURL(ENVIRONMENTS[environment]);
+  const environments = getEnvironments();
+  mainWindow.loadURL(environments[environment]);
 
   // Save window bounds on close
   mainWindow.on('close', () => {
@@ -78,12 +99,40 @@ function createWindow() {
 
 function createMenu() {
   const environment = store.get('environment', 'production');
+  const environments = getEnvironments();
+  const devEnabled = isDevEnabled();
+
+  // Build environment submenu
+  const environmentSubmenu = [
+    {
+      label: `Production (${environments.production})`,
+      type: 'radio',
+      checked: environment === 'production',
+      click: () => switchEnvironment('production')
+    }
+  ];
+
+  // Only add development option if enabled
+  if (devEnabled) {
+    environmentSubmenu.push({
+      label: `Development (${environments.development})`,
+      type: 'radio',
+      checked: environment === 'development',
+      click: () => switchEnvironment('development')
+    });
+  }
 
   const template = [
     // File menu
     {
       label: 'File',
       submenu: [
+        {
+          label: 'Preferences...',
+          accelerator: process.platform === 'darwin' ? 'Cmd+,' : 'Ctrl+,',
+          click: () => showPreferencesWindow()
+        },
+        { type: 'separator' },
         {
           label: 'Quit',
           accelerator: process.platform === 'darwin' ? 'Cmd+Q' : 'Ctrl+Q',
@@ -119,20 +168,7 @@ function createMenu() {
         {
           label: 'Environment',
           accelerator: process.platform === 'darwin' ? 'Cmd+E' : 'Ctrl+E',
-          submenu: [
-            {
-              label: 'Production (chat.umontana.ai)',
-              type: 'radio',
-              checked: environment === 'production',
-              click: () => switchEnvironment('production')
-            },
-            {
-              label: 'Development (dev-chat.umontana.ai)',
-              type: 'radio',
-              checked: environment === 'development',
-              click: () => switchEnvironment('development')
-            }
-          ]
+          submenu: environmentSubmenu
         }
       ]
     },
@@ -149,21 +185,13 @@ function createMenu() {
       label: 'Help',
       submenu: [
         {
-          label: 'About',
-          click: () => {
-            const currentEnv = store.get('environment', 'production');
-            const version = app.getVersion();
-            const aboutMessage = `Amplify\n\nVersion: ${version}\nEnvironment: ${currentEnv}\nURL: ${ENVIRONMENTS[currentEnv]}\n\nDesktop app for University of Montana chat applications.`;
-
-            const { dialog } = require('electron');
-            dialog.showMessageBox(mainWindow, {
-              type: 'info',
-              title: 'About Amplify',
-              message: 'Amplify',
-              detail: aboutMessage,
-              buttons: ['OK']
-            });
-          }
+          label: 'Amplify Help',
+          click: () => shell.openExternal('https://umontana.ai/guidelines/amplify-help')
+        },
+        { type: 'separator' },
+        {
+          label: 'Check for Updates...',
+          click: () => checkForUpdates()
         }
       ]
     }
@@ -172,24 +200,22 @@ function createMenu() {
   // On macOS, add app menu
   if (process.platform === 'darwin') {
     template.unshift({
-      label: app.name,
+      label: 'Amplify',
       submenu: [
         {
-          label: `About ${app.name}`,
-          click: () => {
-            const currentEnv = store.get('environment', 'production');
-            const version = app.getVersion();
-            const aboutMessage = `Amplify\n\nVersion: ${version}\nEnvironment: ${currentEnv}\nURL: ${ENVIRONMENTS[currentEnv]}\n\nDesktop app for University of Montana chat applications.`;
-
-            const { dialog } = require('electron');
-            dialog.showMessageBox(mainWindow, {
-              type: 'info',
-              title: 'About Amplify',
-              message: 'Amplify',
-              detail: aboutMessage,
-              buttons: ['OK']
-            });
-          }
+          label: 'About Amplify',
+          click: () => showAboutWindow()
+        },
+        { type: 'separator' },
+        {
+          label: 'Preferences...',
+          accelerator: 'Cmd+,',
+          click: () => showPreferencesWindow()
+        },
+        { type: 'separator' },
+        {
+          label: 'Check for Updates...',
+          click: () => checkForUpdates()
         },
         { type: 'separator' },
         { role: 'hide' },
@@ -220,9 +246,240 @@ function switchEnvironment(newEnvironment) {
   }
 }
 
+function showAboutWindow() {
+  // If about window already exists, focus it
+  if (aboutWindow && !aboutWindow.isDestroyed()) {
+    aboutWindow.focus();
+    return;
+  }
+
+  const currentEnv = store.get('environment', 'production');
+  const version = app.getVersion();
+  const environments = getEnvironments();
+  const url = environments[currentEnv];
+
+  // Create about window
+  aboutWindow = new BrowserWindow({
+    width: 600,
+    height: 800,
+    resizable: false,
+    maximizable: false,
+    minimizable: false,
+    fullscreenable: false,
+    title: 'About Amplify',
+    parent: mainWindow,
+    modal: true,
+    webPreferences: {
+      nodeIntegration: true,
+      contextIsolation: false
+    }
+  });
+
+  // Load the about page with query parameters
+  aboutWindow.loadFile('renderer/about.html', {
+    query: {
+      version: version,
+      environment: currentEnv,
+      url: url
+    }
+  });
+
+  // Remove menu bar on Windows/Linux
+  aboutWindow.setMenuBarVisibility(false);
+
+  // Clean up reference when window is closed
+  aboutWindow.on('closed', () => {
+    aboutWindow = null;
+  });
+}
+
+function showPreferencesWindow() {
+  // If preferences window already exists, focus it
+  if (preferencesWindow && !preferencesWindow.isDestroyed()) {
+    preferencesWindow.focus();
+    return;
+  }
+
+  const environments = getEnvironments();
+  const devEnabled = isDevEnabled();
+
+  // Create preferences window
+  preferencesWindow = new BrowserWindow({
+    width: 650,
+    height: 520,
+    resizable: false,
+    maximizable: false,
+    minimizable: false,
+    fullscreenable: false,
+    title: 'Preferences',
+    parent: mainWindow,
+    modal: true,
+    webPreferences: {
+      nodeIntegration: true,
+      contextIsolation: false
+    }
+  });
+
+  // Load the preferences page with query parameters
+  preferencesWindow.loadFile('renderer/preferences.html', {
+    query: {
+      prodUrl: environments.production,
+      devUrl: environments.development,
+      devEnabled: devEnabled.toString()
+    }
+  });
+
+  // Remove menu bar on Windows/Linux
+  preferencesWindow.setMenuBarVisibility(false);
+
+  // Clean up reference when window is closed
+  preferencesWindow.on('closed', () => {
+    preferencesWindow = null;
+  });
+}
+
+// Function to show custom update dialog
+function showUpdateDialog(type, version = null) {
+  return new Promise((resolve) => {
+    // Close existing dialog if open
+    if (updateDialog && !updateDialog.isDestroyed()) {
+      updateDialog.close();
+    }
+
+    updateDialogCallback = resolve;
+
+    updateDialog = new BrowserWindow({
+      width: 480,
+      height: 320,
+      resizable: false,
+      maximizable: false,
+      minimizable: false,
+      fullscreenable: false,
+      title: 'Update',
+      parent: mainWindow,
+      modal: true,
+      frame: false,
+      transparent: true,
+      backgroundColor: '#00000000',
+      webPreferences: {
+        nodeIntegration: true,
+        contextIsolation: false
+      }
+    });
+
+    updateDialog.loadFile('renderer/update-dialog.html', {
+      query: {
+        type: type,
+        version: version || ''
+      }
+    });
+
+    updateDialog.on('closed', () => {
+      updateDialog = null;
+      if (updateDialogCallback) {
+        updateDialogCallback('cancel');
+        updateDialogCallback = null;
+      }
+    });
+  });
+}
+
+// Handle update dialog responses
+ipcMain.on('update-dialog-response', (event, response) => {
+  if (updateDialogCallback) {
+    updateDialogCallback(response);
+    updateDialogCallback = null;
+  }
+  if (updateDialog && !updateDialog.isDestroyed()) {
+    updateDialog.close();
+  }
+});
+
+// Handle preferences save
+ipcMain.on('preferences-save', (event, settings) => {
+  // Save the new URLs to store
+  store.set('prodUrl', settings.prodUrl);
+  store.set('devUrl', settings.devUrl);
+  store.set('devEnabled', settings.devEnabled);
+
+  // Close preferences window
+  if (preferencesWindow && !preferencesWindow.isDestroyed()) {
+    preferencesWindow.close();
+  }
+
+  // Recreate the main window to apply new settings
+  if (mainWindow) {
+    mainWindow.close();
+  }
+  createWindow();
+});
+
+// Function to manually check for updates
+async function checkForUpdates() {
+  if (updateCheckInProgress) {
+    return;
+  }
+
+  if (!app.isPackaged) {
+    await showUpdateDialog('dev-mode');
+    return;
+  }
+
+  updateCheckInProgress = true;
+  autoUpdater.checkForUpdates();
+}
+
+// Auto-updater event handlers
+autoUpdater.on('update-available', async (info) => {
+  updateCheckInProgress = false;
+  const response = await showUpdateDialog('available', info.version);
+
+  if (response === 'primary') {
+    autoUpdater.downloadUpdate();
+    await showUpdateDialog('downloading');
+  }
+});
+
+autoUpdater.on('update-not-available', async () => {
+  if (updateCheckInProgress) {
+    // User manually checked - show them a message
+    await showUpdateDialog('up-to-date');
+  }
+  updateCheckInProgress = false;
+});
+
+autoUpdater.on('update-downloaded', async () => {
+  const response = await showUpdateDialog('ready');
+
+  if (response === 'primary') {
+    autoUpdater.quitAndInstall();
+  }
+});
+
+autoUpdater.on('error', async (error) => {
+  console.error('Auto-updater error:', error);
+
+  // Show error only if user manually checked
+  if (updateCheckInProgress) {
+    await showUpdateDialog('error');
+  }
+
+  updateCheckInProgress = false;
+});
+
 // App lifecycle events
 app.whenReady().then(() => {
   createWindow();
+
+  // Check for updates after app launches (skip in development)
+  if (app.isPackaged) {
+    // Wait 3 seconds after launch to check for updates
+    setTimeout(() => {
+      autoUpdater.checkForUpdates();
+    }, 3000);
+  } else {
+    console.log('Skipping auto-updater check in development mode');
+  }
 
   app.on('activate', () => {
     // On macOS, recreate window when dock icon is clicked and no windows are open

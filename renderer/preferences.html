@@ -1,0 +1,266 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Preferences</title>
+  <style>
+    * {
+      margin: 0;
+      padding: 0;
+      box-sizing: border-box;
+    }
+
+    body {
+      font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif;
+      background: linear-gradient(135deg, #333333 0%, #4a4a4a 100%);
+      color: #ffffff;
+      padding: 30px;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      min-height: 100vh;
+    }
+
+    .preferences-container {
+      max-width: 500px;
+      width: 100%;
+    }
+
+    h1 {
+      font-size: 24px;
+      font-weight: 600;
+      margin-bottom: 24px;
+      text-align: center;
+    }
+
+    .form-group {
+      background: rgba(52, 53, 64, 0.3);
+      backdrop-filter: blur(10px);
+      border-radius: 12px;
+      padding: 20px;
+      margin-bottom: 16px;
+      border: 1px solid rgba(52, 53, 64, 0.5);
+    }
+
+    label {
+      display: block;
+      font-size: 13px;
+      font-weight: 600;
+      margin-bottom: 8px;
+      opacity: 0.9;
+    }
+
+    input[type="text"],
+    input[type="url"] {
+      width: 100%;
+      background: rgba(0, 0, 0, 0.3);
+      border: 1px solid rgba(255, 255, 255, 0.2);
+      color: white;
+      padding: 10px 12px;
+      border-radius: 6px;
+      font-size: 13px;
+      font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif;
+      margin-bottom: 6px;
+    }
+
+    input[type="text"]:focus,
+    input[type="url"]:focus {
+      outline: none;
+      border-color: #9b9cad;
+    }
+
+    input::placeholder {
+      color: rgba(255, 255, 255, 0.4);
+    }
+
+    .help-text {
+      font-size: 11px;
+      opacity: 0.6;
+      line-height: 1.4;
+    }
+
+    .checkbox-group {
+      display: flex;
+      align-items: center;
+      margin-top: 12px;
+    }
+
+    input[type="checkbox"] {
+      width: 16px;
+      height: 16px;
+      margin-right: 8px;
+      cursor: pointer;
+    }
+
+    .checkbox-group label {
+      margin: 0;
+      cursor: pointer;
+      font-weight: 500;
+    }
+
+    .buttons {
+      display: flex;
+      justify-content: flex-end;
+      gap: 12px;
+      margin-top: 24px;
+    }
+
+    button {
+      background: rgba(52, 53, 64, 0.6);
+      border: 1px solid rgba(52, 53, 64, 0.8);
+      color: white;
+      padding: 10px 24px;
+      border-radius: 6px;
+      font-size: 14px;
+      font-weight: 500;
+      cursor: pointer;
+      transition: all 0.2s;
+    }
+
+    button:hover {
+      background: rgba(52, 53, 64, 0.8);
+      border-color: #343540;
+    }
+
+    button:active {
+      transform: scale(0.98);
+    }
+
+    button.primary {
+      background: rgba(52, 53, 64, 0.9);
+      border-color: #343540;
+    }
+
+    button.primary:hover {
+      background: #343540;
+    }
+
+    .error {
+      color: #ff6b6b;
+      font-size: 12px;
+      margin-top: 4px;
+      display: none;
+    }
+
+    .error.show {
+      display: block;
+    }
+  </style>
+</head>
+<body>
+  <div class="preferences-container">
+    <h1>Preferences</h1>
+
+    <div class="form-group">
+      <label for="prod-url">Production Environment URL</label>
+      <input type="url" id="prod-url" placeholder="https://chat.umontana.ai" required>
+      <div class="help-text">The URL for your production Amplify instance</div>
+      <div class="error" id="prod-error">Please enter a valid URL</div>
+    </div>
+
+    <div class="form-group">
+      <label for="dev-url">Development Environment URL (Optional)</label>
+      <input type="url" id="dev-url" placeholder="https://dev-chat.umontana.ai">
+      <div class="help-text">The URL for your development/staging Amplify instance</div>
+      <div class="error" id="dev-error">Please enter a valid URL</div>
+
+      <div class="checkbox-group">
+        <input type="checkbox" id="enable-dev" checked>
+        <label for="enable-dev">Enable development environment</label>
+      </div>
+    </div>
+
+    <div class="buttons">
+      <button id="cancel-btn">Cancel</button>
+      <button id="save-btn" class="primary">Save</button>
+    </div>
+  </div>
+
+  <script>
+    const { ipcRenderer } = require('electron');
+
+    // Get current settings
+    const urlParams = new URLSearchParams(window.location.search);
+    const prodUrl = urlParams.get('prodUrl') || '';
+    const devUrl = urlParams.get('devUrl') || '';
+    const devEnabled = urlParams.get('devEnabled') === 'true';
+
+    // Populate form
+    document.getElementById('prod-url').value = prodUrl;
+    document.getElementById('dev-url').value = devUrl;
+    document.getElementById('enable-dev').checked = devEnabled;
+
+    // URL validation
+    function isValidUrl(string) {
+      try {
+        const url = new URL(string);
+        return url.protocol === 'http:' || url.protocol === 'https:';
+      } catch (_) {
+        return false;
+      }
+    }
+
+    // Handle save
+    document.getElementById('save-btn').addEventListener('click', () => {
+      const prodUrlValue = document.getElementById('prod-url').value.trim();
+      const devUrlValue = document.getElementById('dev-url').value.trim();
+      const devEnabledValue = document.getElementById('enable-dev').checked;
+
+      // Validate production URL
+      if (!prodUrlValue || !isValidUrl(prodUrlValue)) {
+        document.getElementById('prod-error').classList.add('show');
+        return;
+      } else {
+        document.getElementById('prod-error').classList.remove('show');
+      }
+
+      // Validate development URL (if provided)
+      if (devEnabledValue && devUrlValue && !isValidUrl(devUrlValue)) {
+        document.getElementById('dev-error').classList.add('show');
+        return;
+      } else {
+        document.getElementById('dev-error').classList.remove('show');
+      }
+
+      // Send settings to main process
+      ipcRenderer.send('preferences-save', {
+        prodUrl: prodUrlValue,
+        devUrl: devEnabledValue ? devUrlValue : '',
+        devEnabled: devEnabledValue
+      });
+    });
+
+    // Handle cancel
+    document.getElementById('cancel-btn').addEventListener('click', () => {
+      window.close();
+    });
+
+    // Toggle dev URL input based on checkbox
+    document.getElementById('enable-dev').addEventListener('change', (e) => {
+      const devUrlInput = document.getElementById('dev-url');
+      if (!e.target.checked) {
+        devUrlInput.disabled = true;
+        devUrlInput.style.opacity = '0.5';
+      } else {
+        devUrlInput.disabled = false;
+        devUrlInput.style.opacity = '1';
+      }
+    });
+
+    // Initial state
+    if (!devEnabled) {
+      document.getElementById('dev-url').disabled = true;
+      document.getElementById('dev-url').style.opacity = '0.5';
+    }
+
+    // Handle ESC key to close
+    document.addEventListener('keydown', (e) => {
+      if (e.key === 'Escape') {
+        window.close();
+      }
+    });
+  </script>
+</body>
+</html>

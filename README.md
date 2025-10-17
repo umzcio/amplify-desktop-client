@@ -1,6 +1,18 @@
 # Amplify - Desktop Application
 
-Desktop wrapper for University of Montana chat applications (chat.umontana.ai and dev-chat.umontana.ai).
+Desktop wrapper for University of Montana's implementation of Amplify, providing a native desktop experience with persistent sessions and seamless environment switching.
+
+## About Amplify
+
+**Amplify** is Vanderbilt University's open-source enterprise platform for generative AI, designed to empower organizations with the ability to innovate across disciplines. By offering a flexible and cost-efficient chat-based interface, Amplify allows users to experiment with and deploy generative AI solutions tailored to their specific needs.
+
+Its architecture supports vendor independence, ensuring that users can select and switch between a variety of AI models, such as those from OpenAI and Anthropic, without being locked into a single provider.
+
+Learn more at [AmplifyGenAI.org](https://www.amplifygenai.org/)
+
+### University of Montana Implementation
+
+The University of Montana has implemented Amplify as its flagship generative AI tool, providing faculty, staff, and students with powerful AI capabilities. This desktop application was developed by UM to deliver an enhanced native experience to end-users, with persistent SAML SSO sessions and seamless environment switching between production and development instances.
 
 ## Features
 
@@ -106,8 +118,8 @@ Amplify-Mac-Desktop/
 - External links open in default browser
 
 ### Data Storage
-- Settings stored in: `~/Library/Application Support/umontana-chat-app` (macOS)
-- Settings stored in: `%APPDATA%/umontana-chat-app` (Windows)
+- Settings stored in: `~/Library/Application Support/amplify-client` (macOS)
+- Settings stored in: `%APPDATA%/amplify-client` (Windows)
 - Includes: environment preference, window bounds, session cookies
 
 ## Distribution
@@ -138,12 +150,22 @@ Amplify-Mac-Desktop/
 ### Need to clear all data
 - Close the app
 - Delete the settings folder:
-  - macOS: `~/Library/Application Support/umontana-chat-app`
-  - Windows: `%APPDATA%/umontana-chat-app`
+  - macOS: `~/Library/Application Support/amplify-client`
+  - Windows: `%APPDATA%/amplify-client`
 
 ## License
 
 MIT
+
+## Acknowledgments
+
+This desktop application is built for the University of Montana's implementation of **Amplify**, an open-source platform developed by Vanderbilt University.
+
+- **Amplify Platform**: Developed and maintained by Vanderbilt University
+- **Project Homepage**: [AmplifyGenAI.org](https://www.amplifygenai.org/)
+- **Source Repository**: [github.com/vanderbilt-data-science/amplify](https://github.com/vanderbilt-data-science/amplify)
+
+We thank Vanderbilt University for creating and open-sourcing Amplify, enabling institutions like the University of Montana to provide powerful generative AI capabilities to their communities.
 
 ## Support
 

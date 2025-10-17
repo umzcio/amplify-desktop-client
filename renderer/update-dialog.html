@@ -1,0 +1,170 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Update</title>
+  <style>
+    * {
+      margin: 0;
+      padding: 0;
+      box-sizing: border-box;
+    }
+
+    body {
+      font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif;
+      background: linear-gradient(135deg, #333333 0%, #4a4a4a 100%);
+      color: #ffffff;
+      padding: 40px 30px 30px 30px;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      min-height: 100vh;
+    }
+
+    .icon-container {
+      margin-bottom: 24px;
+    }
+
+    .icon {
+      width: 80px;
+      height: 80px;
+      border-radius: 16px;
+      box-shadow: 0 4px 16px rgba(0, 0, 0, 0.3);
+    }
+
+    .message {
+      font-size: 18px;
+      font-weight: 500;
+      text-align: center;
+      margin-bottom: 10px;
+      line-height: 1.4;
+      max-width: 400px;
+    }
+
+    .detail {
+      font-size: 14px;
+      text-align: center;
+      margin-bottom: 24px;
+      opacity: 0.8;
+      line-height: 1.5;
+      max-width: 400px;
+    }
+
+    .buttons {
+      display: flex;
+      gap: 12px;
+    }
+
+    button {
+      background: rgba(52, 53, 64, 0.6);
+      border: 1px solid rgba(52, 53, 64, 0.8);
+      color: white;
+      padding: 12px 32px;
+      border-radius: 8px;
+      font-size: 14px;
+      font-weight: 500;
+      cursor: pointer;
+      transition: all 0.2s;
+      min-width: 100px;
+    }
+
+    button:hover {
+      background: rgba(52, 53, 64, 0.8);
+      border-color: #343540;
+    }
+
+    button:active {
+      transform: scale(0.98);
+    }
+
+    button.primary {
+      background: rgba(52, 53, 64, 0.9);
+      border-color: #343540;
+    }
+
+    button.primary:hover {
+      background: #343540;
+    }
+
+    .hidden {
+      display: none;
+    }
+  </style>
+</head>
+<body>
+  <div class="icon-container">
+    <img src="../assets/icon.png" alt="Amplify Logo" class="icon">
+  </div>
+
+  <div class="message" id="message">You are running the latest version.</div>
+  <div class="detail hidden" id="detail"></div>
+
+  <div class="buttons" id="buttons">
+    <button id="btn-secondary" class="hidden">Later</button>
+    <button id="btn-primary" class="primary">OK</button>
+  </div>
+
+  <script>
+    const { ipcRenderer } = require('electron');
+
+    // Get dialog config from query params
+    const urlParams = new URLSearchParams(window.location.search);
+    const type = urlParams.get('type') || 'up-to-date';
+    const version = urlParams.get('version');
+
+    const messageEl = document.getElementById('message');
+    const detailEl = document.getElementById('detail');
+    const btnPrimary = document.getElementById('btn-primary');
+    const btnSecondary = document.getElementById('btn-secondary');
+
+    // Configure dialog based on type
+    if (type === 'up-to-date') {
+      messageEl.textContent = 'You are running the latest version.';
+    } else if (type === 'available') {
+      messageEl.textContent = `A new version (${version}) is available!`;
+      detailEl.textContent = 'Would you like to download it now? The update will be installed when you quit the app.';
+      detailEl.classList.remove('hidden');
+      btnPrimary.textContent = 'Download Update';
+      btnSecondary.textContent = 'Later';
+      btnSecondary.classList.remove('hidden');
+    } else if (type === 'downloading') {
+      messageEl.textContent = 'Downloading update...';
+      detailEl.textContent = "Update is downloading in the background. You'll be notified when it's ready.";
+      detailEl.classList.remove('hidden');
+    } else if (type === 'ready') {
+      messageEl.textContent = 'Update ready to install!';
+      detailEl.textContent = 'The update will be installed the next time you restart Amplify. Would you like to restart now?';
+      detailEl.classList.remove('hidden');
+      btnPrimary.textContent = 'Restart Now';
+      btnSecondary.textContent = 'Later';
+      btnSecondary.classList.remove('hidden');
+    } else if (type === 'error') {
+      messageEl.textContent = 'Update check failed';
+      detailEl.textContent = 'Unable to check for updates. Please try again later.';
+      detailEl.classList.remove('hidden');
+    } else if (type === 'dev-mode') {
+      messageEl.textContent = 'Updates unavailable in development mode';
+      detailEl.textContent = 'Update checking is only available in the packaged version of the app.';
+      detailEl.classList.remove('hidden');
+    }
+
+    // Handle button clicks
+    btnPrimary.addEventListener('click', () => {
+      ipcRenderer.send('update-dialog-response', 'primary');
+    });
+
+    btnSecondary.addEventListener('click', () => {
+      ipcRenderer.send('update-dialog-response', 'secondary');
+    });
+
+    // Handle ESC key to close
+    document.addEventListener('keydown', (e) => {
+      if (e.key === 'Escape') {
+        ipcRenderer.send('update-dialog-response', 'cancel');
+      }
+    });
+  </script>
+</body>
+</html>
