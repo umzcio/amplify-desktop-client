@@ -30,7 +30,7 @@
     "publish": {
       "provider": "github",
       "owner": "umzcio",
-      "repo": "Amplify-Desktop-Client"
+      "repo": "amplify-desktop-client"
     },
     "mac": {
       "category": "public.app-category.productivity",
