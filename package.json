@@ -29,7 +29,7 @@
     "productName": "Amplify",
     "publish": {
       "provider": "github",
-      "owner": "YOUR_GITHUB_USERNAME",
+      "owner": "umzcio",
       "repo": "Amplify-Desktop-Client"
     },
     "mac": {
