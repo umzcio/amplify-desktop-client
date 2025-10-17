@@ -33,13 +33,13 @@ Desktop wrapper for University of Montana's implementation of Amplify, providing
 
 ## Download
 
-**Latest Release: [v1.0.0](https://github.com/umzcio/Amplify-Desktop-Client/releases/latest)**
+**Latest Release: [v1.0.1](https://github.com/umzcio/Amplify-Desktop-Client/releases/latest)**
 
 | Platform | Download |
 |----------|----------|
-| 🍎 **macOS** (Apple Silicon) | [Amplify-1.0.0-arm64.dmg](https://github.com/umzcio/Amplify-Desktop-Client/releases/download/v1.0.0/Amplify-1.0.0-arm64.dmg) |
-| 🪟 **Windows** (Installer) | [Amplify Setup 1.0.0.exe](https://github.com/umzcio/Amplify-Desktop-Client/releases/download/v1.0.0/Amplify.Setup.1.0.0.exe) |
-| 🪟 **Windows** (Portable) | [Amplify 1.0.0.exe](https://github.com/umzcio/Amplify-Desktop-Client/releases/download/v1.0.0/Amplify.1.0.0.exe) |
+| 🍎 **macOS** (Apple Silicon) | [Amplify-1.0.1-arm64.dmg](https://github.com/umzcio/Amplify-Desktop-Client/releases/download/v1.0.1/Amplify-1.0.1-arm64.dmg) |
+| 🪟 **Windows** (Installer) | [Amplify Setup 1.0.1.exe](https://github.com/umzcio/Amplify-Desktop-Client/releases/download/v1.0.1/Amplify.Setup.1.0.1.exe) |
+| 🪟 **Windows** (Portable) | [Amplify 1.0.1.exe](https://github.com/umzcio/Amplify-Desktop-Client/releases/download/v1.0.1/Amplify.1.0.1.exe) |
 
 > 📦 View all releases and release notes: [Releases Page](https://github.com/umzcio/Amplify-Desktop-Client/releases)
 
@@ -109,8 +109,8 @@ npm run build:win
 ```
 
 Built applications will be in the `dist/` folder:
-- **macOS**: `Amplify-1.0.0-arm64.dmg` and `Amplify-1.0.0-arm64-mac.zip`
-- **Windows**: `Amplify Setup 1.0.0.exe` (installer) and `Amplify 1.0.0.exe` (portable)
+- **macOS**: `Amplify-1.0.1-arm64.dmg` and `Amplify-1.0.1-arm64-mac.zip`
+- **Windows**: `Amplify Setup 1.0.1.exe` (installer) and `Amplify 1.0.1.exe` (portable)
 
 ## Usage
 
@@ -180,7 +180,7 @@ Amplify-Mac-Desktop/
 ## Distribution
 
 ### macOS Installation
-1. Download the DMG file (`Amplify-1.0.0-arm64.dmg`)
+1. Download the DMG file (`Amplify-1.0.1-arm64.dmg`)
 2. Open the DMG
 3. Drag "Amplify" to Applications folder
 
