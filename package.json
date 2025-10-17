@@ -1,6 +1,6 @@
 {
   "name": "amplify-client",
-  "version": "1.0.0",
+  "version": "1.0.1",
   "description": "Desktop client for Amplify - University of Montana's generative AI platform",
   "main": "main.js",
   "scripts": {

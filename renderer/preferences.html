@@ -3,17 +3,6 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <meta http-equiv="Content-Security-Policy" content="
-    default-src 'self';
-    script-src 'self';
-    style-src 'self' 'unsafe-inline';
-    img-src 'self' data:;
-    font-src 'self';
-    connect-src 'none';
-    object-src 'none';
-    base-uri 'self';
-    form-action 'none';
-  ">
   <title>Preferences</title>
   <style>
     * {
@@ -252,11 +241,11 @@
   </div>
 
   <script>
-    // Use secure electronAPI from preload script
-    const params = window.electronAPI.getQueryParams();
-    const prodUrl = params.prodUrl || '';
-    const devUrl = params.devUrl || '';
-    const devEnabled = params.devEnabled === 'true';
+    const { ipcRenderer } = require('electron');
+    const urlParams = new URLSearchParams(window.location.search);
+    const prodUrl = urlParams.get('prodUrl') || '';
+    const devUrl = urlParams.get('devUrl') || '';
+    const devEnabled = urlParams.get('devEnabled') === 'true';
 
     // Populate form
     document.getElementById('prod-url').value = prodUrl;
@@ -342,8 +331,8 @@
         return;
       }
 
-      // Send settings to main process via secure API
-      window.electronAPI.savePreferences({
+      // Send settings to main process
+      ipcRenderer.send('preferences-save', {
         prodUrl: prodUrlValue,
         devUrl: devEnabledValue ? devUrlValue : '',
         devEnabled: devEnabledValue
@@ -352,7 +341,7 @@
 
     // Handle cancel
     document.getElementById('cancel-btn').addEventListener('click', () => {
-      window.electronAPI.closeWindow();
+      window.close();
     });
 
     // Toggle dev URL input based on checkbox
@@ -380,7 +369,7 @@
     // Handle ESC key to close
     document.addEventListener('keydown', (e) => {
       if (e.key === 'Escape') {
-        window.electronAPI.closeWindow();
+        window.close();
       }
     });
   </script>

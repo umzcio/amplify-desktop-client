@@ -274,10 +274,8 @@ function showAboutWindow() {
     parent: mainWindow,
     modal: true,
     webPreferences: {
-      preload: path.join(__dirname, 'dialog-preload.js'),
-      contextIsolation: true,
-      nodeIntegration: false,
-      sandbox: true
+      nodeIntegration: true,
+      contextIsolation: false
     }
   });
 
@@ -321,10 +319,8 @@ function showPreferencesWindow() {
     parent: mainWindow,
     modal: true,
     webPreferences: {
-      preload: path.join(__dirname, 'dialog-preload.js'),
-      contextIsolation: true,
-      nodeIntegration: false,
-      sandbox: true
+      nodeIntegration: true,
+      contextIsolation: false
     }
   });
 
@@ -370,10 +366,8 @@ function showUpdateDialog(type, version = null) {
       transparent: true,
       backgroundColor: '#00000000',
       webPreferences: {
-        preload: path.join(__dirname, 'dialog-preload.js'),
-        contextIsolation: true,
-        nodeIntegration: false,
-        sandbox: true
+        nodeIntegration: true,
+        contextIsolation: false
       }
     });
 

@@ -3,17 +3,6 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <meta http-equiv="Content-Security-Policy" content="
-    default-src 'self';
-    script-src 'self';
-    style-src 'self' 'unsafe-inline';
-    img-src 'self' data:;
-    font-src 'self';
-    connect-src 'none';
-    object-src 'none';
-    base-uri 'self';
-    form-action 'none';
-  ">
   <title>About Amplify</title>
   <style>
     * {
@@ -245,16 +234,16 @@
   </div>
 
   <script>
-    // Use secure electronAPI from preload script
-    const params = window.electronAPI.getQueryParams();
+    const { shell } = require('electron');
+    const urlParams = new URLSearchParams(window.location.search);
 
     // Validate and sanitize parameters
     const allowedEnvironments = ['production', 'development'];
-    const environment = allowedEnvironments.includes(params.environment)
-      ? params.environment
+    const environment = allowedEnvironments.includes(urlParams.get('environment'))
+      ? urlParams.get('environment')
       : 'production';
 
-    const version = (params.version || '1.0.0').replace(/[^0-9.]/g, '');
+    const version = (urlParams.get('version') || '1.0.0').replace(/[^0-9.]/g, '');
 
     document.getElementById('version').textContent = `Version: ${version}`;
     document.getElementById('environment').textContent =
@@ -262,25 +251,25 @@
 
     // Handle close button
     document.getElementById('close-btn').addEventListener('click', () => {
-      window.electronAPI.closeWindow();
+      window.close();
     });
 
     // Handle ESC key to close
     document.addEventListener('keydown', (e) => {
       if (e.key === 'Escape') {
-        window.electronAPI.closeWindow();
+        window.close();
       }
     });
 
     // Handle external links
     document.getElementById('amplify-link').addEventListener('click', (e) => {
       e.preventDefault();
-      window.electronAPI.openExternal('https://www.amplifygenai.org/');
+      shell.openExternal('https://www.amplifygenai.org/');
     });
 
     document.getElementById('um-link').addEventListener('click', (e) => {
       e.preventDefault();
-      window.electronAPI.openExternal('https://umontana.ai');
+      shell.openExternal('https://umontana.ai');
     });
   </script>
 </body>
