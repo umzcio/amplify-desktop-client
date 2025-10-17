@@ -1,8 +1,49 @@
 # Amplify - Desktop Application
 
+[![Version](https://img.shields.io/github/v/release/umzcio/Amplify-Desktop-Client?color=blue)](https://github.com/umzcio/Amplify-Desktop-Client/releases)
+[![License](https://img.shields.io/badge/license-MIT-green.svg)](LICENSE)
+[![Platform](https://img.shields.io/badge/platform-macOS%20%7C%20Windows-lightgrey.svg)](https://github.com/umzcio/Amplify-Desktop-Client/releases)
+[![Electron](https://img.shields.io/badge/Electron-28-47848f.svg)](https://www.electronjs.org/)
+
 Desktop wrapper for University of Montana's implementation of Amplify, providing a native desktop experience with persistent sessions and seamless environment switching.
 
 ![Amplify Desktop Client](screenshots/AmplifyClient.png)
+
+## Table of Contents
+- [Download](#download)
+- [About Amplify](#about-amplify)
+- [Features](#features)
+- [Quick Start](#quick-start)
+- [Development](#development)
+- [Usage](#usage)
+  - [Environment Switching](#environment-switching)
+  - [Preferences](#preferences)
+  - [Keyboard Shortcuts](#keyboard-shortcuts)
+  - [Login Sessions](#login-sessions)
+- [Distribution](#distribution)
+  - [macOS Installation](#macos-installation)
+  - [Windows Installation](#windows-installation)
+- [Troubleshooting](#troubleshooting)
+- [Technical Details](#technical-details)
+- [Project Structure](#project-structure)
+- [Acknowledgments](#acknowledgments)
+- [Support](#support)
+
+---
+
+## Download
+
+**Latest Release: [v1.0.0](https://github.com/umzcio/Amplify-Desktop-Client/releases/latest)**
+
+| Platform | Download |
+|----------|----------|
+| 🍎 **macOS** (Apple Silicon) | [Amplify-1.0.0-arm64.dmg](https://github.com/umzcio/Amplify-Desktop-Client/releases/download/v1.0.0/Amplify-1.0.0-arm64.dmg) |
+| 🪟 **Windows** (Installer) | [Amplify Setup 1.0.0.exe](https://github.com/umzcio/Amplify-Desktop-Client/releases/download/v1.0.0/Amplify.Setup.1.0.0.exe) |
+| 🪟 **Windows** (Portable) | [Amplify 1.0.0.exe](https://github.com/umzcio/Amplify-Desktop-Client/releases/download/v1.0.0/Amplify.1.0.0.exe) |
+
+> 📦 View all releases and release notes: [Releases Page](https://github.com/umzcio/Amplify-Desktop-Client/releases)
+
+---
 
 ## About Amplify
 
@@ -18,12 +59,16 @@ The University of Montana has implemented Amplify as its flagship generative AI 
 
 ## Features
 
-- 🖥️ Native desktop app for macOS and Windows
-- 🔐 Persistent SAML SSO login sessions
-- 🔄 Easy switching between Production and Development environments
-- 💾 Remembers window size and position
-- 🔒 Secure with context isolation
-- 🌐 Separate cookie storage for each environment
+- 🖥️ **Native Desktop Experience** - Built with Electron for macOS and Windows
+- 🔐 **Persistent SAML SSO** - Login sessions saved automatically, no repeated authentication
+- 🔄 **Environment Switching** - Seamlessly switch between Production and Development
+- ⚙️ **Configurable URLs** - Customize environment URLs via Preferences (reusable by other institutions)
+- 🔔 **Auto-Update Notifications** - Automatic update checks with GitHub Releases integration
+- 💾 **Window State Persistence** - Remembers size, position, and environment preference
+- 🎨 **Beautiful Custom Dialogs** - Professional About, Preferences, and Update dialogs
+- 🔒 **Security First** - Context isolation, disabled node integration, separate session partitions
+- 🌐 **Isolated Cookie Storage** - Each environment maintains separate login sessions
+- ⌨️ **Keyboard Shortcuts** - Quick access to all features via familiar shortcuts
 
 ## Quick Start
 
