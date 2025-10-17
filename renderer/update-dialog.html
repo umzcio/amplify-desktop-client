@@ -118,6 +118,40 @@
     .hidden {
       display: none !important;
     }
+
+    .progress-container {
+      width: 100%;
+      max-width: 400px;
+      margin-bottom: 20px;
+      display: none;
+    }
+
+    .progress-container.show {
+      display: block;
+    }
+
+    .progress-bar {
+      width: 100%;
+      height: 8px;
+      background: rgba(0, 0, 0, 0.3);
+      border-radius: 4px;
+      overflow: hidden;
+    }
+
+    .progress-fill {
+      height: 100%;
+      background: linear-gradient(90deg, #4a9eff 0%, #6eb5ff 100%);
+      border-radius: 4px;
+      transition: width 0.3s ease;
+      width: 0%;
+    }
+
+    .progress-text {
+      font-size: 12px;
+      text-align: center;
+      margin-top: 8px;
+      opacity: 0.8;
+    }
   </style>
 </head>
 <body>
@@ -130,6 +164,13 @@
       You are running the latest version.
     </div>
     <div class="detail" id="detail" aria-live="polite"></div>
+
+    <div class="progress-container" id="progress-container">
+      <div class="progress-bar">
+        <div class="progress-fill" id="progress-fill"></div>
+      </div>
+      <div class="progress-text" id="progress-text">0%</div>
+    </div>
 
     <div class="buttons" id="buttons">
       <button id="btn-secondary" class="hidden" type="button" tabindex="-1" aria-hidden="true">Later</button>
@@ -200,6 +241,17 @@
       if (e.key === 'Escape') {
         ipcRenderer.send('update-dialog-response', 'cancel');
       }
+    });
+
+    // Listen for download progress
+    ipcRenderer.on('download-progress', (event, progressInfo) => {
+      const progressContainer = document.getElementById('progress-container');
+      const progressFill = document.getElementById('progress-fill');
+      const progressText = document.getElementById('progress-text');
+
+      progressContainer.classList.add('show');
+      progressFill.style.width = `${progressInfo.percent}%`;
+      progressText.textContent = `${Math.round(progressInfo.percent)}% (${progressInfo.transferred}MB / ${progressInfo.total}MB)`;
     });
   </script>
 </body>

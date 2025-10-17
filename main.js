@@ -585,11 +585,26 @@ autoUpdater.on('update-not-available', async () => {
   updateCheckInProgress = false;
 });
 
+autoUpdater.on('download-progress', (progressObj) => {
+  if (updateDialog && !updateDialog.isDestroyed()) {
+    updateDialog.webContents.send('download-progress', {
+      percent: progressObj.percent,
+      transferred: (progressObj.transferred / 1024 / 1024).toFixed(2),
+      total: (progressObj.total / 1024 / 1024).toFixed(2)
+    });
+  }
+});
+
 autoUpdater.on('update-downloaded', async () => {
   const response = await showUpdateDialog('ready');
 
   if (response === 'primary') {
-    autoUpdater.quitAndInstall();
+    // quitAndInstall parameters:
+    // - isSilent: false = show "app will restart" dialog
+    // - isForceRunAfter: true = launch new version after installation
+    setImmediate(() => {
+      autoUpdater.quitAndInstall(false, true);
+    });
   }
 });
 
