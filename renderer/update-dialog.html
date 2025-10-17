@@ -3,6 +3,17 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <meta http-equiv="Content-Security-Policy" content="
+    default-src 'self';
+    script-src 'self';
+    style-src 'self' 'unsafe-inline';
+    img-src 'self' data:;
+    font-src 'self';
+    connect-src 'none';
+    object-src 'none';
+    base-uri 'self';
+    form-action 'none';
+  ">
   <title>Update</title>
   <style>
     * {
@@ -79,6 +90,20 @@
       transform: scale(0.98);
     }
 
+    button:focus {
+      outline: 2px solid #9b9cad;
+      outline-offset: 2px;
+    }
+
+    button:focus:not(:focus-visible) {
+      outline: none;
+    }
+
+    button:focus-visible {
+      outline: 2px solid #9b9cad;
+      outline-offset: 2px;
+    }
+
     button.primary {
       background: rgba(52, 53, 64, 0.9);
       border-color: #343540;
@@ -89,30 +114,32 @@
     }
 
     .hidden {
-      display: none;
+      display: none !important;
     }
   </style>
 </head>
 <body>
-  <div class="icon-container">
-    <img src="../assets/icon.png" alt="Amplify Logo" class="icon">
-  </div>
+  <div role="dialog" aria-labelledby="dialog-message" aria-live="polite">
+    <div class="icon-container">
+      <img src="../assets/icon.png" alt="Amplify application icon" class="icon">
+    </div>
 
-  <div class="message" id="message">You are running the latest version.</div>
-  <div class="detail hidden" id="detail"></div>
+    <div class="message" id="message" role="status" aria-live="polite" aria-atomic="true">
+      You are running the latest version.
+    </div>
+    <div class="detail" id="detail" aria-live="polite"></div>
 
-  <div class="buttons" id="buttons">
-    <button id="btn-secondary" class="hidden">Later</button>
-    <button id="btn-primary" class="primary">OK</button>
+    <div class="buttons" id="buttons">
+      <button id="btn-secondary" class="hidden" type="button" tabindex="-1" aria-hidden="true">Later</button>
+      <button id="btn-primary" class="primary" type="button" aria-label="Confirm">OK</button>
+    </div>
   </div>
 
   <script>
-    const { ipcRenderer } = require('electron');
-
-    // Get dialog config from query params
-    const urlParams = new URLSearchParams(window.location.search);
-    const type = urlParams.get('type') || 'up-to-date';
-    const version = urlParams.get('version');
+    // Use secure electronAPI from preload script
+    const params = window.electronAPI.getQueryParams();
+    const type = params.type || 'up-to-date';
+    const version = params.updateVersion;
 
     const messageEl = document.getElementById('message');
     const detailEl = document.getElementById('detail');
@@ -122,47 +149,54 @@
     // Configure dialog based on type
     if (type === 'up-to-date') {
       messageEl.textContent = 'You are running the latest version.';
+      btnPrimary.setAttribute('aria-label', 'Close dialog');
     } else if (type === 'available') {
       messageEl.textContent = `A new version (${version}) is available!`;
       detailEl.textContent = 'Would you like to download it now? The update will be installed when you quit the app.';
-      detailEl.classList.remove('hidden');
       btnPrimary.textContent = 'Download Update';
+      btnPrimary.setAttribute('aria-label', 'Download update now');
       btnSecondary.textContent = 'Later';
       btnSecondary.classList.remove('hidden');
+      btnSecondary.removeAttribute('aria-hidden');
+      btnSecondary.removeAttribute('tabindex');
+      btnSecondary.setAttribute('aria-label', 'Download later');
     } else if (type === 'downloading') {
       messageEl.textContent = 'Downloading update...';
       detailEl.textContent = "Update is downloading in the background. You'll be notified when it's ready.";
-      detailEl.classList.remove('hidden');
+      btnPrimary.setAttribute('aria-label', 'Close dialog');
     } else if (type === 'ready') {
       messageEl.textContent = 'Update ready to install!';
       detailEl.textContent = 'The update will be installed the next time you restart Amplify. Would you like to restart now?';
-      detailEl.classList.remove('hidden');
       btnPrimary.textContent = 'Restart Now';
+      btnPrimary.setAttribute('aria-label', 'Restart and install update now');
       btnSecondary.textContent = 'Later';
       btnSecondary.classList.remove('hidden');
+      btnSecondary.removeAttribute('aria-hidden');
+      btnSecondary.removeAttribute('tabindex');
+      btnSecondary.setAttribute('aria-label', 'Restart later');
     } else if (type === 'error') {
       messageEl.textContent = 'Update check failed';
       detailEl.textContent = 'Unable to check for updates. Please try again later.';
-      detailEl.classList.remove('hidden');
+      btnPrimary.setAttribute('aria-label', 'Close dialog');
     } else if (type === 'dev-mode') {
       messageEl.textContent = 'Updates unavailable in development mode';
       detailEl.textContent = 'Update checking is only available in the packaged version of the app.';
-      detailEl.classList.remove('hidden');
+      btnPrimary.setAttribute('aria-label', 'Close dialog');
     }
 
     // Handle button clicks
     btnPrimary.addEventListener('click', () => {
-      ipcRenderer.send('update-dialog-response', 'primary');
+      window.electronAPI.updateDialogResponse('primary');
     });
 
     btnSecondary.addEventListener('click', () => {
-      ipcRenderer.send('update-dialog-response', 'secondary');
+      window.electronAPI.updateDialogResponse('secondary');
     });
 
     // Handle ESC key to close
     document.addEventListener('keydown', (e) => {
       if (e.key === 'Escape') {
-        ipcRenderer.send('update-dialog-response', 'cancel');
+        window.electronAPI.updateDialogResponse('cancel');
       }
     });
   </script>

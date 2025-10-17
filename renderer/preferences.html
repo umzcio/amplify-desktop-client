@@ -3,6 +3,17 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <meta http-equiv="Content-Security-Policy" content="
+    default-src 'self';
+    script-src 'self';
+    style-src 'self' 'unsafe-inline';
+    img-src 'self' data:;
+    font-src 'self';
+    connect-src 'none';
+    object-src 'none';
+    base-uri 'self';
+    form-action 'none';
+  ">
   <title>Preferences</title>
   <style>
     * {
@@ -67,8 +78,13 @@
 
     input[type="text"]:focus,
     input[type="url"]:focus {
-      outline: none;
+      outline: 2px solid #9b9cad;
+      outline-offset: 2px;
       border-color: #9b9cad;
+    }
+
+    input[aria-invalid="true"] {
+      border-color: #ff6b6b;
     }
 
     input::placeholder {
@@ -92,6 +108,11 @@
       height: 16px;
       margin-right: 8px;
       cursor: pointer;
+    }
+
+    input[type="checkbox"]:focus {
+      outline: 2px solid #9b9cad;
+      outline-offset: 2px;
     }
 
     .checkbox-group label {
@@ -128,6 +149,20 @@
       transform: scale(0.98);
     }
 
+    button:focus {
+      outline: 2px solid #9b9cad;
+      outline-offset: 2px;
+    }
+
+    button:focus:not(:focus-visible) {
+      outline: none;
+    }
+
+    button:focus-visible {
+      outline: 2px solid #9b9cad;
+      outline-offset: 2px;
+    }
+
     button.primary {
       background: rgba(52, 53, 64, 0.9);
       border-color: #343540;
@@ -147,85 +182,168 @@
     .error.show {
       display: block;
     }
+
+    .sr-only {
+      position: absolute;
+      width: 1px;
+      height: 1px;
+      padding: 0;
+      margin: -1px;
+      overflow: hidden;
+      clip: rect(0, 0, 0, 0);
+      white-space: nowrap;
+      border-width: 0;
+    }
   </style>
 </head>
 <body>
-  <div class="preferences-container">
-    <h1>Preferences</h1>
+  <div class="preferences-container" role="dialog" aria-labelledby="dialog-title">
+    <h1 id="dialog-title">Preferences</h1>
 
     <div class="form-group">
       <label for="prod-url">Production Environment URL</label>
-      <input type="url" id="prod-url" placeholder="https://chat.umontana.ai" required>
-      <div class="help-text">The URL for your production Amplify instance</div>
-      <div class="error" id="prod-error">Please enter a valid URL</div>
+      <input
+        type="url"
+        id="prod-url"
+        aria-describedby="prod-help prod-error"
+        aria-invalid="false"
+        aria-required="true"
+        placeholder="https://chat.umontana.ai"
+        required
+      >
+      <div class="help-text" id="prod-help">The URL for your production Amplify instance</div>
+      <div class="error" id="prod-error" role="alert" aria-live="polite">
+        Please enter a valid URL
+      </div>
     </div>
 
     <div class="form-group">
       <label for="dev-url">Development Environment URL (Optional)</label>
-      <input type="url" id="dev-url" placeholder="https://dev-chat.umontana.ai">
-      <div class="help-text">The URL for your development/staging Amplify instance</div>
-      <div class="error" id="dev-error">Please enter a valid URL</div>
+      <input
+        type="url"
+        id="dev-url"
+        aria-describedby="dev-help dev-error"
+        aria-invalid="false"
+        placeholder="https://dev-chat.umontana.ai"
+      >
+      <div class="help-text" id="dev-help">The URL for your development/staging Amplify instance</div>
+      <div class="error" id="dev-error" role="alert" aria-live="polite">
+        Please enter a valid URL
+      </div>
 
       <div class="checkbox-group">
-        <input type="checkbox" id="enable-dev" checked>
+        <input
+          type="checkbox"
+          id="enable-dev"
+          aria-describedby="dev-checkbox-help"
+          checked
+        >
         <label for="enable-dev">Enable development environment</label>
+      </div>
+      <div id="dev-checkbox-help" class="sr-only">
+        When unchecked, the development environment option will be hidden from the environment switcher
       </div>
     </div>
 
     <div class="buttons">
-      <button id="cancel-btn">Cancel</button>
-      <button id="save-btn" class="primary">Save</button>
+      <button id="cancel-btn" type="button">Cancel</button>
+      <button id="save-btn" type="button" class="primary">Save</button>
     </div>
   </div>
 
   <script>
-    const { ipcRenderer } = require('electron');
-
-    // Get current settings
-    const urlParams = new URLSearchParams(window.location.search);
-    const prodUrl = urlParams.get('prodUrl') || '';
-    const devUrl = urlParams.get('devUrl') || '';
-    const devEnabled = urlParams.get('devEnabled') === 'true';
+    // Use secure electronAPI from preload script
+    const params = window.electronAPI.getQueryParams();
+    const prodUrl = params.prodUrl || '';
+    const devUrl = params.devUrl || '';
+    const devEnabled = params.devEnabled === 'true';
 
     // Populate form
     document.getElementById('prod-url').value = prodUrl;
     document.getElementById('dev-url').value = devUrl;
     document.getElementById('enable-dev').checked = devEnabled;
 
-    // URL validation
+    // Enhanced URL validation
     function isValidUrl(string) {
       try {
         const url = new URL(string);
-        return url.protocol === 'http:' || url.protocol === 'https:';
+
+        // Only allow HTTP/HTTPS
+        if (url.protocol !== 'http:' && url.protocol !== 'https:') {
+          return false;
+        }
+
+        // Validate hostname format
+        const hostnameRegex = /^[a-zA-Z0-9]([a-zA-Z0-9-]{0,61}[a-zA-Z0-9])?(\.[a-zA-Z0-9]([a-zA-Z0-9-]{0,61}[a-zA-Z0-9])?)*$/;
+        if (!hostnameRegex.test(url.hostname)) {
+          return false;
+        }
+
+        // Warn if not HTTPS in production
+        if (url.protocol === 'http:' && !url.hostname.includes('localhost') && !url.hostname.includes('127.0.0.1')) {
+          console.warn('HTTP URLs are not recommended for production environments');
+        }
+
+        return true;
       } catch (_) {
         return false;
       }
     }
 
-    // Handle save
+    // Handle save with accessibility improvements
     document.getElementById('save-btn').addEventListener('click', () => {
       const prodUrlValue = document.getElementById('prod-url').value.trim();
       const devUrlValue = document.getElementById('dev-url').value.trim();
       const devEnabledValue = document.getElementById('enable-dev').checked;
 
+      let isValid = true;
+
       // Validate production URL
       if (!prodUrlValue || !isValidUrl(prodUrlValue)) {
-        document.getElementById('prod-error').classList.add('show');
-        return;
+        const input = document.getElementById('prod-url');
+        const error = document.getElementById('prod-error');
+
+        input.setAttribute('aria-invalid', 'true');
+        error.classList.add('show');
+
+        if (!isValid) {
+          input.focus(); // Focus first error
+        }
+        isValid = false;
       } else {
-        document.getElementById('prod-error').classList.remove('show');
+        const input = document.getElementById('prod-url');
+        const error = document.getElementById('prod-error');
+
+        input.setAttribute('aria-invalid', 'false');
+        error.classList.remove('show');
       }
 
-      // Validate development URL (if provided)
+      // Validate development URL (if provided and enabled)
       if (devEnabledValue && devUrlValue && !isValidUrl(devUrlValue)) {
-        document.getElementById('dev-error').classList.add('show');
-        return;
+        const input = document.getElementById('dev-url');
+        const error = document.getElementById('dev-error');
+
+        input.setAttribute('aria-invalid', 'true');
+        error.classList.add('show');
+
+        if (isValid) { // If prod was valid, focus dev error
+          input.focus();
+        }
+        isValid = false;
       } else {
-        document.getElementById('dev-error').classList.remove('show');
+        const input = document.getElementById('dev-url');
+        const error = document.getElementById('dev-error');
+
+        input.setAttribute('aria-invalid', 'false');
+        error.classList.remove('show');
       }
 
-      // Send settings to main process
-      ipcRenderer.send('preferences-save', {
+      if (!isValid) {
+        return;
+      }
+
+      // Send settings to main process via secure API
+      window.electronAPI.savePreferences({
         prodUrl: prodUrlValue,
         devUrl: devEnabledValue ? devUrlValue : '',
         devEnabled: devEnabledValue
@@ -234,7 +352,7 @@
 
     // Handle cancel
     document.getElementById('cancel-btn').addEventListener('click', () => {
-      window.close();
+      window.electronAPI.closeWindow();
     });
 
     // Toggle dev URL input based on checkbox
@@ -243,22 +361,26 @@
       if (!e.target.checked) {
         devUrlInput.disabled = true;
         devUrlInput.style.opacity = '0.5';
+        devUrlInput.setAttribute('aria-disabled', 'true');
       } else {
         devUrlInput.disabled = false;
         devUrlInput.style.opacity = '1';
+        devUrlInput.setAttribute('aria-disabled', 'false');
       }
     });
 
     // Initial state
     if (!devEnabled) {
-      document.getElementById('dev-url').disabled = true;
-      document.getElementById('dev-url').style.opacity = '0.5';
+      const devUrlInput = document.getElementById('dev-url');
+      devUrlInput.disabled = true;
+      devUrlInput.style.opacity = '0.5';
+      devUrlInput.setAttribute('aria-disabled', 'true');
     }
 
     // Handle ESC key to close
     document.addEventListener('keydown', (e) => {
       if (e.key === 'Escape') {
-        window.close();
+        window.electronAPI.closeWindow();
       }
     });
   </script>

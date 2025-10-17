@@ -76,11 +76,15 @@ function createWindow() {
     // Only open truly external documentation/help links in browser
     const urlObj = new URL(url);
 
-    // Common external domains that should open in browser
-    const externalDomains = ['github.com', 'stackoverflow.com', 'google.com/search'];
-    const shouldOpenExternal = externalDomains.some(domain => urlObj.hostname.includes(domain));
+    // Helper function to check if hostname matches external domain
+    function isExternalDomain(hostname) {
+      const externalDomains = ['github.com', 'stackoverflow.com', 'google.com'];
+      return externalDomains.some(domain =>
+        hostname === domain || hostname.endsWith('.' + domain)
+      );
+    }
 
-    if (shouldOpenExternal) {
+    if (isExternalDomain(urlObj.hostname)) {
       shell.openExternal(url);
       return { action: 'deny' };
     }
@@ -270,8 +274,10 @@ function showAboutWindow() {
     parent: mainWindow,
     modal: true,
     webPreferences: {
-      nodeIntegration: true,
-      contextIsolation: false
+      preload: path.join(__dirname, 'dialog-preload.js'),
+      contextIsolation: true,
+      nodeIntegration: false,
+      sandbox: true
     }
   });
 
@@ -315,8 +321,10 @@ function showPreferencesWindow() {
     parent: mainWindow,
     modal: true,
     webPreferences: {
-      nodeIntegration: true,
-      contextIsolation: false
+      preload: path.join(__dirname, 'dialog-preload.js'),
+      contextIsolation: true,
+      nodeIntegration: false,
+      sandbox: true
     }
   });
 
@@ -362,8 +370,10 @@ function showUpdateDialog(type, version = null) {
       transparent: true,
       backgroundColor: '#00000000',
       webPreferences: {
-        nodeIntegration: true,
-        contextIsolation: false
+        preload: path.join(__dirname, 'dialog-preload.js'),
+        contextIsolation: true,
+        nodeIntegration: false,
+        sandbox: true
       }
     });
 
@@ -383,6 +393,14 @@ function showUpdateDialog(type, version = null) {
     });
   });
 }
+
+// Handle dialog close requests from renderer
+ipcMain.on('dialog-close', (event) => {
+  const window = BrowserWindow.fromWebContents(event.sender);
+  if (window && !window.isDestroyed()) {
+    window.close();
+  }
+});
 
 // Handle update dialog responses
 ipcMain.on('update-dialog-response', (event, response) => {
