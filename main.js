@@ -604,10 +604,13 @@ autoUpdater.on('update-downloaded', async () => {
     // Set flag so app will quit when windows close
     isInstallingUpdate = true;
 
-    // On macOS, quitAndInstall() is REQUIRED to actually install the update
-    // It will close the app, replace it with the new version, and relaunch
+    // Close all windows first, then call quitAndInstall
+    // This ensures quitAndInstall can properly handle the quit and relaunch
+    BrowserWindow.getAllWindows().forEach(win => win.close());
+
+    // quitAndInstall will quit the app, install the update, and relaunch
     setImmediate(() => {
-      autoUpdater.quitAndInstall(true, true);
+      autoUpdater.quitAndInstall(false, true);
     });
   }
 });
